@@ -1,0 +1,517 @@
+====================================================================
+            REACTIVE PROGRAMMING IN JAVA – COMPLETE GUIDE
+====================================================================
+
+Library Used : Project Reactor
+Used In      : Spring WebFlux
+
+Reactive Programming allows applications to handle large numbers of
+requests using fewer threads through asynchronous, non-blocking
+processing.
+
+====================================================================
+1. WHY REACTIVE PROGRAMMING IS NEEDED
+====================================================================
+
+Traditional Blocking Model
+--------------------------
+
+Client Request
+      |
+      v
+Server Thread
+      |
+      v
+Database Call (WAIT)
+      |
+      v
+Thread remains BLOCKED until DB responds
+
+
+Problem:
+--------
+
+If 1000 users send requests:
+
+1000 threads may be required
+
+Threads consume:
+- Memory
+- CPU scheduling
+- Context switching time
+
+
+Reactive Programming Solution
+-----------------------------
+
+Reactive systems use:
+
+1. Asynchronous processing
+2. Non-blocking I/O
+3. Event driven architecture
+4. Backpressure control
+
+
+Example Flow
+
+Request arrives
+      |
+Start DB call
+      |
+Thread released immediately
+      |
+Thread processes another request
+      |
+DB response arrives → callback executed
+
+
+Result:
+-------
+
+Less threads
+Higher scalability
+Better performance
+
+
+====================================================================
+2. REACTIVE STREAMS SPECIFICATION
+====================================================================
+
+Reactive Streams define four components:
+
+1. Publisher
+2. Subscriber
+3. Subscription
+4. Processor
+
+
+DATA FLOW
+
+Publisher  ------->  Subscriber
+
+
+STREAM LIFECYCLE EVENTS
+
+onSubscribe()
+onNext()
+onNext()
+onNext()
+onComplete()
+
+If an error occurs:
+
+onError()
+
+
+====================================================================
+3. PROJECT REACTOR
+====================================================================
+
+Project Reactor is the reactive library used in Spring WebFlux.
+
+Two main publishers exist:
+
+Flux  -> 0 to many elements
+Mono  -> 0 or 1 element
+
+
+Examples
+
+Flux.just("Bike","Car","Bus")
+
+Mono.just("TVS Apache")
+
+
+====================================================================
+4. THREAD BEHAVIOR IN REACTIVE SYSTEMS
+====================================================================
+
+Traditional Model
+
+1 Request = 1 Thread
+
+
+Reactive Model
+
+Few threads handle thousands of requests.
+
+Reactive systems use:
+
+Event Loop
+Non-blocking callbacks
+Schedulers
+
+
+Thread Flow
+
+Publisher produces data
+       |
+Operator processes data
+       |
+Subscriber consumes data
+
+
+Schedulers in Reactor
+
+Schedulers.immediate()
+Schedulers.single()
+Schedulers.parallel()
+Schedulers.boundedElastic()
+
+
+Example
+
+Flux.range(1,5)
+.subscribeOn(Schedulers.parallel())
+
+
+====================================================================
+5. BASIC PUBLISHER → SUBSCRIBER EXAMPLE
+====================================================================
+
+Concept
+-------
+Flux acts as Publisher.
+Subscriber consumes data using subscribe().
+
+
+CODE
+
+import reactor.core.publisher.Flux;
+
+public class Example1_BasicPublisherSubscriber {
+
+    public static void main(String[] args) {
+
+        Flux<String> vehicles = Flux.just("Bike", "Car", "Bus");
+
+        vehicles.subscribe(
+                data -> System.out.println("Received: " + data)
+        );
+    }
+}
+
+
+OUTPUT
+
+Received: Bike
+Received: Car
+Received: Bus
+
+
+====================================================================
+6. SUBSCRIBER CALLBACK METHODS
+====================================================================
+
+Subscriber supports three callbacks:
+
+onNext()     -> executed for each element
+onError()    -> executed if error occurs
+onComplete() -> executed when stream finishes
+
+
+CODE
+
+import reactor.core.publisher.Flux;
+
+public class Example2_SubscriberCallbacks {
+
+    public static void main(String[] args) {
+
+        Flux<Integer> numbers = Flux.just(10, 20, 30);
+
+        numbers.subscribe(
+
+                value -> System.out.println("Received: " + value),
+
+                error -> System.out.println("Error: " + error),
+
+                () -> System.out.println("Stream Completed")
+
+        );
+    }
+}
+
+
+====================================================================
+7. MAP OPERATOR
+====================================================================
+
+map() transforms each element in the stream.
+
+Example
+
+Input  : 1,2,3
+Output : 10,20,30
+
+
+CODE
+
+import reactor.core.publisher.Flux;
+
+public class Example3_MapOperator {
+
+    public static void main(String[] args) {
+
+        Flux<Integer> numbers = Flux.just(1,2,3);
+
+        numbers
+            .map(n -> n * 10)
+            .subscribe(value -> System.out.println(value));
+    }
+}
+
+
+OUTPUT
+
+10
+20
+30
+
+
+====================================================================
+8. FILTER OPERATOR
+====================================================================
+
+filter() removes unwanted elements.
+
+Example
+
+Input      : 5,10,15,20
+Condition  : number > 10
+Output     : 15,20
+
+
+CODE
+
+import reactor.core.publisher.Flux;
+
+public class Example4_FilterOperator {
+
+    public static void main(String[] args) {
+
+        Flux<Integer> numbers = Flux.just(5,10,15,20);
+
+        numbers
+            .filter(n -> n > 10)
+            .subscribe(System.out::println);
+    }
+}
+
+
+====================================================================
+9. FLATMAP OPERATOR
+====================================================================
+
+flatMap() is used when each item generates another publisher.
+
+Example
+
+Bike -> Bike-1, Bike-2
+Car  -> Car-1, Car-2
+
+
+CODE
+
+import reactor.core.publisher.Flux;
+
+public class Example5_FlatMapOperator {
+
+    public static void main(String[] args) {
+
+        Flux<String> vehicles = Flux.just("Bike","Car");
+
+        vehicles
+            .flatMap(v -> Flux.just(v+"-Model1", v+"-Model2"))
+            .subscribe(System.out::println);
+    }
+}
+
+
+====================================================================
+10. ERROR HANDLING
+====================================================================
+
+Reactive streams support several error handling operators.
+
+Common ones:
+
+onErrorReturn()
+onErrorResume()
+retry()
+
+
+CODE
+
+import reactor.core.publisher.Flux;
+
+public class Example6_ErrorHandling {
+
+    public static void main(String[] args) {
+
+        Flux<Integer> numbers = Flux.just(10,5,0,20);
+
+        numbers
+            .map(n -> 100 / n)
+            .onErrorReturn(-1)
+            .subscribe(System.out::println);
+    }
+}
+
+
+====================================================================
+11. MONO EXAMPLE
+====================================================================
+
+Mono emits only ONE element.
+
+
+CODE
+
+import reactor.core.publisher.Mono;
+
+public class Example7_MonoExample {
+
+    public static void main(String[] args) {
+
+        Mono<String> vehicle = Mono.just("TVS Apache");
+
+        vehicle.subscribe(System.out::println);
+    }
+}
+
+
+====================================================================
+12. BACKPRESSURE
+====================================================================
+
+Problem
+
+Publisher produces data faster than subscriber can process.
+
+Example
+
+Publisher -> 1,000,000 items
+Subscriber -> slow processing
+
+
+Solution
+
+Subscriber requests limited items.
+
+Example
+
+subscription.request(2)
+
+
+====================================================================
+13. CUSTOM SUBSCRIBER
+====================================================================
+
+Subscriber interface methods:
+
+onSubscribe()
+onNext()
+onError()
+onComplete()
+
+
+CODE
+
+import reactor.core.publisher.Flux;
+import org.reactivestreams.Subscriber;
+import org.reactivestreams.Subscription;
+
+public class Example8_CustomSubscriber {
+
+    public static void main(String[] args) {
+
+        Flux<Integer> numbers = Flux.just(1,2,3,4);
+
+        numbers.subscribe(new Subscriber<Integer>() {
+
+            Subscription subscription;
+
+            public void onSubscribe(Subscription s) {
+                subscription = s;
+                subscription.request(4);
+            }
+
+            public void onNext(Integer value) {
+                System.out.println("Received: " + value);
+            }
+
+            public void onError(Throwable t) {
+                System.out.println("Error: " + t);
+            }
+
+            public void onComplete() {
+                System.out.println("Stream Completed");
+            }
+        });
+    }
+}
+
+
+====================================================================
+14. REACTIVE PIPELINE
+====================================================================
+
+Reactive flow:
+
+Publisher
+   |
+map()
+   |
+filter()
+   |
+flatMap()
+   |
+Subscriber
+
+
+CODE
+
+import reactor.core.publisher.Flux;
+
+public class Example9_ReactivePipeline {
+
+    public static void main(String[] args) {
+
+        Flux.range(1,10)
+
+            .filter(n -> n % 2 == 0)
+            .map(n -> n * 10)
+            .doOnNext(n -> System.out.println("Processing: " + n))
+
+            .subscribe(
+                data -> System.out.println("Subscriber received: " + data),
+                error -> System.out.println("Error: " + error),
+                () -> System.out.println("Stream finished")
+            );
+    }
+}
+
+
+====================================================================
+SUMMARY
+====================================================================
+
+Reactive Programming provides:
+
+✔ Non-blocking execution
+✔ Asynchronous processing
+✔ Better scalability
+✔ Efficient thread usage
+✔ Backpressure handling
+
+Used heavily in:
+
+Spring WebFlux
+Streaming systems
+High concurrency APIs
+Microservices
+
+====================================================================
+END OF DOCUMENT
+====================================================================
